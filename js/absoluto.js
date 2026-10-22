@@ -7,7 +7,7 @@
   }
   var page = location.origin + path;
   var folder = location.origin + (location.pathname || "/").replace(/[^/]*$/, "");
-  var image = folder + "assets/og.jpg";
+  var image = folder + "assets/fotos/fachada.jpg";
   var canon = document.querySelector('link[rel="canonical"]');
   if (canon) canon.setAttribute("href", page);
   var set = function (selector, value) {
