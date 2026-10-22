@@ -1,23 +1,16 @@
-import { faq } from "./faq.js";
-import { servicios, pintarPrecio } from "./servicios.js";
 import {
   negocio,
-  formatoPrecio,
   direccionLinea,
   enlaceMapa,
   enlaceEmbed,
-  enlaceWhatsapp,
   textoCinta,
   codigoPais,
   textoHorario,
   estadoApertura,
-  avisoDuracion,
-  horasDelDia,
-  partesBogota
+  usuarioInstagram
 } from "./config.js";
 
 const file = (location.pathname || "").split("/").pop() || "index.html";
-
 const pageKey = !file || file === "index.html" ? "index" : file.replace(/\.html$/, "");
 
 const seo = {
@@ -25,17 +18,9 @@ const seo = {
     title: negocio.nombre + " · Barbería en " + negocio.direccion.ciudad,
     description: negocio.nombre + ": barbería con identidad propia en " + negocio.direccion.ciudad + ", " + negocio.direccion.departamento + ". Mira el local, síguenos en Instagram y encuentra cómo llegar."
   },
-  historia: {
-    title: "Nuestra historia — " + negocio.nombre,
-    description: "La historia de " + negocio.nombre + " en " + negocio.direccion.ciudad + ". " + negocio.barbero + ", barbero."
-  },
-  privacidad: {
-    title: "Política de datos — " + negocio.nombre,
-    description: "Qué guarda " + negocio.nombre + " cuando reservas: nombre, celular, servicio y fecha. El celular también se usa para la tarjeta de fidelidad y el corte gratis."
-  },
   "404": {
     title: "Página no encontrada — " + negocio.nombre,
-    description: "Esta página no existe. Vuelve al inicio de " + negocio.nombre + " o reserva tu cita."
+    description: "Esta página no existe. Vuelve al inicio de " + negocio.nombre + "."
   }
 };
 
@@ -55,64 +40,20 @@ const applySeo = () => {
   setMeta('meta[property="og:site_name"]', negocio.nombre);
 };
 
-const applyLinks = () => {
-  document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
-    let text = "";
-    try {
-      text = new URL(link.getAttribute("href"), "https://wa.me").searchParams.get("text") || "";
-    } catch (error) {}
-    link.href = enlaceWhatsapp(text);
-  });
-  document.querySelectorAll("[data-tel]").forEach((link) => {
-    link.href = "tel:+" + negocio.whatsapp;
-    if (!link.querySelector("svg")) link.textContent = negocio.telefonoVisible;
-  });
-  document.querySelectorAll("[data-maps]").forEach((link) => {
-    link.href = enlaceMapa();
-  });
-  document.querySelectorAll("[data-red]").forEach((link) => {
-    const href = negocio.redes[link.getAttribute("data-red")];
-    const item = link.closest("li") || link;
-    if (!href) {
-      item.hidden = true;
-      return;
-    }
-    link.href = href;
-    if (link.getAttribute("data-red") === "instagram") {
-      const handle = "@" + href.replace(/\/+$/, "").split("/").pop();
-      [...link.childNodes].forEach((node) => {
-        if (node.nodeType === 3 && node.textContent.trim()) node.textContent = " " + handle;
-      });
-      if (link.hasAttribute("aria-label")) link.setAttribute("aria-label", "Instagram " + handle);
-    }
-    item.hidden = false;
-  });
-  document.querySelectorAll("[data-resenas]").forEach((link) => {
-    const url = String(negocio.redes.resenas || "");
-    const wrap = link.closest("[data-resenas-wrap]") || link;
-    if (!/^https?:\/\//i.test(url)) {
-      wrap.hidden = true;
-      return;
-    }
-    link.href = url;
-    wrap.hidden = false;
-  });
-  document.querySelectorAll("[data-email]").forEach((link) => {
-    const email = String(negocio.email || "");
-    const wrap = link.closest("[data-email-wrap]") || link;
-    if (!email.includes("@")) {
-      wrap.hidden = true;
-      return;
-    }
-    link.href = "mailto:" + email;
-    link.textContent = email;
-    wrap.hidden = false;
+const applyCinta = () => {
+  const text = textoCinta();
+  if (text) document.documentElement.style.removeProperty("--cinta");
+  else document.documentElement.style.setProperty("--cinta", "0px");
+  document.querySelectorAll("[data-cinta]").forEach((node) => {
+    node.textContent = text;
+    node.hidden = !text;
   });
 };
 
 const applyDireccion = () => {
+  const linea = direccionLinea();
   document.querySelectorAll("[data-direccion]").forEach((node) => {
-    node.textContent = direccionLinea();
+    node.textContent = linea;
   });
   document.querySelectorAll("[data-nombre]").forEach((node) => {
     node.textContent = negocio.nombre;
@@ -132,95 +73,49 @@ const applyHorario = () => {
       list.appendChild(item);
     });
   });
-  document.querySelectorAll("[data-horario-resumen]").forEach((node) => {
-    node.replaceChildren();
-    negocio.horario.forEach((regla, index) => {
-      if (index) node.appendChild(document.createElement("br"));
-      const cuando = textoHorario(regla);
-      node.appendChild(document.createTextNode(regla.etiqueta + " · " + cuando));
-    });
-  });
-  const pintarEstado = (estado) => {
-    document.querySelectorAll("[data-open-status]").forEach((node) => {
-      node.classList.toggle("is-open", !!estado.abierto);
-      node.classList.toggle("is-closed", estado.abierto === false && !estado.pendiente);
-      const label = node.querySelector("[data-open-label]");
-      if (label) label.textContent = estado.texto;
-    });
-  };
   const estado = estadoApertura();
-  pintarEstado(estado);
-  const hoy = partesBogota().iso;
-  const slots = horasDelDia(hoy);
-  if (!slots.length) return;
-  import("./supabase.js").then(async ({ supabase }) => {
-    const { data, error } = await supabase.rpc("horas_ocupadas", { p_fecha: hoy });
-    if (error) return;
-    const taken = new Set((data || []).map((row) => String((row && row.hora) || row).slice(0, 5)));
-    if (!slots.every((slot) => taken.has(slot))) return;
-    pintarEstado({ abierto: false, texto: "Hoy no hay atención", pendiente: false });
-  }).catch(() => {});
-};
-
-const applyPrecios = () => {
-  document.querySelectorAll("[data-service]").forEach((button) => {
-    const item = servicios.find((entry) => entry.nombre === button.getAttribute("data-service"));
-    if (!item) return;
-    const price = button.querySelector(".price");
-    if (price) pintarPrecio(price, item);
-  });
-  document.querySelectorAll("select[name='servicio']").forEach((select) => {
-    const current = select.value;
-    select.replaceChildren();
-    const empty = document.createElement("option");
-    empty.value = "";
-    empty.textContent = "Elige uno";
-    select.appendChild(empty);
-    servicios.forEach((item) => {
-      const option = document.createElement("option");
-      option.value = item.nombre;
-      option.textContent = item.nombre;
-      select.appendChild(option);
-    });
-    if ([...select.options].some((option) => option.value === current)) select.value = current;
+  document.querySelectorAll("[data-open-status]").forEach((node) => {
+    node.classList.toggle("is-open", !!estado.abierto);
+    node.classList.toggle("is-closed", estado.abierto === false && !estado.pendiente);
+    const label = node.querySelector("[data-open-label]");
+    if (label) label.textContent = estado.texto;
   });
 };
 
-const applyTextos = () => {
-  document.querySelectorAll("[data-politica]").forEach((node) => {
-    node.textContent = negocio.politicaReserva;
+const applyLinks = () => {
+  document.querySelectorAll("[data-maps]").forEach((link) => {
+    link.href = enlaceMapa();
   });
-  document.querySelectorAll("[data-aviso-datos]").forEach((node) => {
-    const href = "privacidad.html";
-    node.replaceChildren(document.createTextNode(negocio.avisoDatos + " "));
-    const link = document.createElement("a");
-    link.href = href;
-    link.textContent = "Política de datos";
-    if (node.closest(".modal")) {
-      link.target = "_blank";
-      link.rel = "noopener";
+  const href = String(negocio.redes.instagram || "").trim();
+  const usuario = usuarioInstagram();
+  document.querySelectorAll("[data-red='instagram']").forEach((link) => {
+    const item = link.closest("li") || link;
+    if (!/^https?:\/\//i.test(href) || !usuario) {
+      item.hidden = true;
+      return;
     }
-    node.append(link, document.createTextNode("."));
-  });
-  document.querySelectorAll("[data-privacidad]").forEach((node) => {
-    node.replaceChildren();
-    negocio.privacidad.forEach((paragraph) => {
-      const p = document.createElement("p");
-      p.textContent = paragraph;
-      node.appendChild(p);
+    link.href = href;
+    const handle = "@" + usuario;
+    [...link.childNodes].forEach((node) => {
+      if (node.nodeType === 3 && node.textContent.trim()) node.textContent = " " + handle;
     });
-    const p = document.createElement("p");
+    if (link.hasAttribute("aria-label")) link.setAttribute("aria-label", "Instagram " + handle);
+    item.hidden = false;
+  });
+};
+
+const applyWhatsapp = () => {
+  const numero = String(negocio.whatsapp || "").replace(/\D/g, "");
+  document.querySelectorAll("[data-whatsapp-mount]").forEach((node) => {
+    node.replaceChildren();
+    if (!numero) return;
     const link = document.createElement("a");
-    link.className = "btn btn-dark";
-    link.href = enlaceWhatsapp("Hola, quiero pedir que borren mis datos de " + negocio.nombre + ".");
+    link.className = node.getAttribute("data-whatsapp-class") || "btn";
+    link.href = "https://wa.me/" + numero;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = "Pedir la eliminación por WhatsApp";
-    p.appendChild(link);
-    node.appendChild(p);
-  });
-  document.querySelectorAll("[data-frase]").forEach((node) => {
-    node.textContent = "Corte con oficio, sin afán. Barbería en " + negocio.direccion.ciudad + ".";
+    link.textContent = "WhatsApp";
+    node.appendChild(link);
   });
 };
 
@@ -229,22 +124,6 @@ const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 const applySchema = () => {
   const node = document.getElementById("schema-negocio");
   if (!node) return;
-  const offers = servicios.map((item) => {
-    const offer = {
-      "@type": "Offer",
-      itemOffered: {
-        "@type": "Service",
-        name: item.nombre,
-        description: item.descripcion
-      }
-    };
-    const price = Number(item.precioNumero);
-    if (Number.isFinite(price) && price > 0) {
-      offer.price = String(price);
-      offer.priceCurrency = "COP";
-    }
-    return offer;
-  });
   const hours = negocio.horario.filter((regla) => !regla.cerrado && regla.abre && regla.cierra).map((regla) => ({
     "@type": "OpeningHoursSpecification",
     dayOfWeek: regla.dias.map((dia) => dayNames[dia === 0 ? 6 : dia - 1]),
@@ -256,10 +135,8 @@ const applySchema = () => {
     "@context": "https://schema.org",
     "@type": ["HairSalon", "BarberShop"],
     name: negocio.nombre,
-    image: folder + "assets/og.jpg",
+    image: folder + "assets/fotos/fachada.jpg",
     url: location.origin + location.pathname,
-    telephone: "+" + negocio.whatsapp,
-    currenciesAccepted: "COP",
     address: {
       "@type": "PostalAddress",
       streetAddress: negocio.direccion.calle,
@@ -267,70 +144,15 @@ const applySchema = () => {
       addressRegion: negocio.direccion.departamento,
       addressCountry: codigoPais()
     },
-    makesOffer: offers,
     hasMap: enlaceMapa()
   };
-  const valores = servicios.map((item) => item.precioNumero).filter((n) => n > 0);
-  if (valores.length) {
-    const min = Math.min(...valores);
-    const max = Math.max(...valores);
-    data.priceRange = min === max ? formatoPrecio(min) : formatoPrecio(min) + "–" + formatoPrecio(max);
-  }
   if (hours.length) data.openingHoursSpecification = hours;
-  if (/^https?:\/\//i.test(negocio.redes.instagram || "")) data.sameAs = [negocio.redes.instagram];
-  if (negocio.email.includes("@")) data.email = negocio.email;
+  const instagram = String(negocio.redes.instagram || "");
+  if (/^https?:\/\//i.test(instagram)) data.sameAs = [instagram];
+  if (String(negocio.email || "").includes("@")) data.email = negocio.email;
+  const numero = String(negocio.whatsapp || "").replace(/\D/g, "");
+  if (numero) data.telephone = "+" + numero;
   node.textContent = JSON.stringify(data);
-};
-
-const applyFaq = () => {
-  const root = document.querySelector("[data-faq]");
-  if (!root || !faq.length) return;
-  const list = document.createElement("div");
-  list.className = "faq-list";
-  faq.forEach((item, index) => {
-    const wrap = document.createElement("div");
-    wrap.className = "faq-item";
-    const heading = document.createElement("h3");
-    const button = document.createElement("button");
-    const panelId = "faq-a-" + index;
-    button.type = "button";
-    button.id = "faq-q-" + index;
-    button.className = "faq-q";
-    button.setAttribute("aria-expanded", "false");
-    button.setAttribute("aria-controls", panelId);
-    button.textContent = item.pregunta;
-    heading.appendChild(button);
-    const panel = document.createElement("div");
-    panel.id = panelId;
-    panel.className = "faq-panel";
-    panel.setAttribute("role", "region");
-    panel.setAttribute("aria-labelledby", button.id);
-    panel.hidden = true;
-    const copy = document.createElement("p");
-    copy.textContent = item.respuesta;
-    panel.appendChild(copy);
-    button.addEventListener("click", () => {
-      const open = button.getAttribute("aria-expanded") === "true";
-      button.setAttribute("aria-expanded", String(!open));
-      panel.hidden = open;
-    });
-    wrap.append(heading, panel);
-    list.appendChild(wrap);
-  });
-  list.addEventListener("keydown", (event) => {
-    const buttons = [...list.querySelectorAll(".faq-q")];
-    const index = buttons.indexOf(document.activeElement);
-    if (index < 0) return;
-    let next = -1;
-    if (event.key === "ArrowDown") next = (index + 1) % buttons.length;
-    if (event.key === "ArrowUp") next = (index - 1 + buttons.length) % buttons.length;
-    if (event.key === "Home") next = 0;
-    if (event.key === "End") next = buttons.length - 1;
-    if (next < 0) return;
-    event.preventDefault();
-    buttons[next].focus();
-  });
-  root.replaceChildren(list);
 };
 
 const applyMap = () => {
@@ -361,49 +183,47 @@ const applyMap = () => {
   observer.observe(frame);
 };
 
-const applyCinta = () => {
-  const text = textoCinta();
-  if (text) document.documentElement.style.removeProperty("--cinta");
-  else document.documentElement.style.setProperty("--cinta", "0px");
-  document.querySelectorAll("[data-cinta]").forEach((node) => {
-    node.textContent = text;
-    node.hidden = !text;
-  });
-};
-
-const applyTop = () => {
-  const link = document.querySelector("[data-top]");
-  if (!link) return;
-  const update = () => {
-    link.hidden = window.scrollY < 640;
+const applyNav = () => {
+  const header = document.querySelector("[data-header]");
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const nav = document.querySelector("[data-nav]");
+  if (header) {
+    const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+  if (!toggle || !nav || !header) return;
+  const close = () => {
+    nav.classList.remove("is-open");
+    header.classList.remove("is-open");
+    toggle.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("is-locked");
   };
-  window.addEventListener("scroll", update, { passive: true });
-  update();
+  toggle.addEventListener("click", () => {
+    const open = !nav.classList.contains("is-open");
+    nav.classList.toggle("is-open", open);
+    header.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("is-locked", open);
+  });
+  nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", close));
 };
 
-const applySkip = () => {
-  const skip = document.querySelector(".skip-link");
-  const main = document.getElementById("contenido");
-  if (!skip || !main) return;
-  skip.addEventListener("click", () => {
-    window.setTimeout(() => main.focus({ preventScroll: true }), 0);
-  });
-};
-
-const paintDuracion = () => {
-  document.querySelectorAll("[data-duracion-note]").forEach((note) => {
-    const form = note.closest("form");
-    const select = form ? form.querySelector("[name='servicio']") : null;
-    if (!select) return;
-    const write = () => {
-      const text = avisoDuracion(select.value);
-      note.hidden = !text;
-      note.textContent = text;
-      note.classList.toggle("is-warn", /corto/.test(text));
-    };
-    select.addEventListener("change", write);
-    write();
-  });
+const applyReveal = () => {
+  const nodes = [...document.querySelectorAll(".reveal")];
+  if (!nodes.length) return;
+  if (!("IntersectionObserver" in window)) {
+    nodes.forEach((node) => node.classList.add("is-visible"));
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  nodes.forEach((node) => observer.observe(node));
 };
 
 document.querySelectorAll("[data-year]").forEach((node) => {
@@ -412,16 +232,11 @@ document.querySelectorAll("[data-year]").forEach((node) => {
 
 applySeo();
 applyCinta();
-applyLinks();
 applyDireccion();
 applyHorario();
-applyPrecios();
-applyTextos();
+applyLinks();
+applyWhatsapp();
 applySchema();
-applyFaq();
 applyMap();
-applyTop();
-applySkip();
-paintDuracion();
-
-export { formatoPrecio };
+applyNav();
+applyReveal();
