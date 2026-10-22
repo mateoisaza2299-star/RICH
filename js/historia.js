@@ -9,12 +9,12 @@ const momentos = [
   {
     ano: "Ene 2024",
     titulo: "Perfeccionamiento en tijera",
-    texto: "Seminario de beunik PRO y AGON EVENTS, el 25 de enero de 2024 en Guatapé, Antioquia. 8 horas de técnicas y perfeccionamiento en tijera."
+    texto: "Seminario de beunik PRO y AGON EVENTS, el 25 de enero de 2024. 8 horas de técnicas y perfeccionamiento en tijera."
   },
   {
     ano: "May 2024",
     titulo: "Técnicas de cortes europeos, barbería clásica, tijera, freestyle y colorimetría",
-    texto: "Seminario internacional de beunik PRO y aWe, el 8 de mayo de 2024 en Bogotá. 8 horas de colorimetría, cortes de tendencia europea, barbería clásica, manejo de barba, fundamentos de tijera, freestyle y técnicas de peinado y moldeo de competencia en cabezote."
+    texto: "Seminario internacional de beunik PRO y aWe, el 8 de mayo de 2024. 8 horas de colorimetría, cortes de tendencia europea, barbería clásica, manejo de barba, fundamentos de tijera, freestyle y técnicas de peinado y moldeo de competencia en cabezote."
   }
 ];
 

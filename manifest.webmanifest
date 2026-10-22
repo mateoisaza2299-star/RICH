@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Miami Cuts",
-  "short_name": "Miami Cuts",
+  "name": "Rich Barbery",
+  "short_name": "Rich Barbery",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

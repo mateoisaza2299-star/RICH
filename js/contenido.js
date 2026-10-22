@@ -5,7 +5,10 @@ import {
   formatoPrecio,
   direccionLinea,
   enlaceMapa,
+  enlaceEmbed,
   enlaceWhatsapp,
+  textoCinta,
+  codigoPais,
   textoHorario,
   estadoApertura,
   avisoDuracion,
@@ -19,8 +22,8 @@ const pageKey = !file || file === "index.html" ? "index" : file.replace(/\.html$
 
 const seo = {
   index: {
-    title: negocio.nombre + " — Barbería en " + negocio.direccion.ciudad,
-    description: negocio.nombre + " en " + negocio.direccion.ciudad + ". Cortes, barba y cejas con calma. Reserva tu cita. " + direccionLinea() + "."
+    title: negocio.nombre + " · Barbería en " + negocio.direccion.ciudad,
+    description: negocio.nombre + ": barbería con identidad propia en " + negocio.direccion.ciudad + ", " + negocio.direccion.departamento + ". Mira el local, síguenos en Instagram y encuentra cómo llegar."
   },
   historia: {
     title: "Nuestra historia — " + negocio.nombre,
@@ -109,17 +112,7 @@ const applyLinks = () => {
 
 const applyDireccion = () => {
   document.querySelectorAll("[data-direccion]").forEach((node) => {
-    if (node.getAttribute("data-direccion") === "linea") {
-      node.textContent = direccionLinea();
-      return;
-    }
-    const d = negocio.direccion;
-    const br = document.createElement("br");
-    node.replaceChildren(
-      document.createTextNode(d.calle),
-      br,
-      document.createTextNode([d.barrio, d.ciudad, d.region].filter(Boolean).join(", "))
-    );
+    node.textContent = direccionLinea();
   });
   document.querySelectorAll("[data-nombre]").forEach((node) => {
     node.textContent = negocio.nombre;
@@ -269,10 +262,10 @@ const applySchema = () => {
     currenciesAccepted: "COP",
     address: {
       "@type": "PostalAddress",
-      streetAddress: [negocio.direccion.calle, negocio.direccion.barrio].filter(Boolean).join(", "),
+      streetAddress: negocio.direccion.calle,
       addressLocality: negocio.direccion.ciudad,
-      addressRegion: negocio.direccion.region,
-      addressCountry: negocio.direccion.pais
+      addressRegion: negocio.direccion.departamento,
+      addressCountry: codigoPais()
     },
     makesOffer: offers,
     hasMap: enlaceMapa()
@@ -347,7 +340,7 @@ const applyMap = () => {
     if (frame.querySelector("iframe")) return;
     const iframe = document.createElement("iframe");
     iframe.title = "Mapa de " + negocio.nombre + " en " + negocio.direccion.ciudad;
-    iframe.src = negocio.mapaEmbed;
+    iframe.src = enlaceEmbed();
     iframe.loading = "lazy";
     iframe.referrerPolicy = "no-referrer-when-downgrade";
     iframe.width = "600";
@@ -366,6 +359,16 @@ const applyMap = () => {
     load();
   }, { rootMargin: "160px 0px" });
   observer.observe(frame);
+};
+
+const applyCinta = () => {
+  const text = textoCinta();
+  if (text) document.documentElement.style.removeProperty("--cinta");
+  else document.documentElement.style.setProperty("--cinta", "0px");
+  document.querySelectorAll("[data-cinta]").forEach((node) => {
+    node.textContent = text;
+    node.hidden = !text;
+  });
 };
 
 const applyTop = () => {
@@ -408,6 +411,7 @@ document.querySelectorAll("[data-year]").forEach((node) => {
 });
 
 applySeo();
+applyCinta();
 applyLinks();
 applyDireccion();
 applyHorario();

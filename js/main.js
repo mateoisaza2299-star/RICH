@@ -1186,11 +1186,11 @@ import {
   const downloadIcs = (booking) => {
     const start = icsStamp(booking.fecha, booking.hora);
     const end = icsEnd(booking.fecha, booking.hora, booking.minutos || 60);
-    const uid = (booking.token || "cita") + "@miamicuts";
+    const uid = (booking.token || "cita") + "@richbarbery";
     const lines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Miami Cuts//Cita//ES",
+      "PRODID:-//Rich Barbery//Cita//ES",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
       "BEGIN:VTIMEZONE",
@@ -1217,7 +1217,7 @@ import {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "cita-miami-cuts.ics";
+    link.download = "cita-rich-barbery.ics";
     document.body.appendChild(link);
     link.click();
     link.remove();
