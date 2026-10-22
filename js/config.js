@@ -1,19 +1,19 @@
 export const negocio = {
-  nombre: "Miami Cuts",
+  nombre: "Rich Barbery",
   barbero: "Brayan Andres Romero",
   sitio: "",
   telefonoVisible: "320 960 4364",
   whatsapp: "573209604364",
   email: "",
   direccion: {
-    calle: "Carrera 7 con Calle 17",
+    calle: "Calle 13 #13-72",
     barrio: "",
-    ciudad: "Fusagasugá",
-    region: "Cundinamarca",
-    pais: "CO"
+    ciudad: "Funza",
+    departamento: "Cundinamarca",
+    pais: "Colombia"
   },
-  mapsUrl: "https://maps.google.com/?q=Carrera+7+con+Calle+17,+Fusagasug%C3%A1,+Cundinamarca",
-  mapaEmbed: "https://maps.google.com/maps?q=Carrera%207%20con%20Calle%2017%2C%20Fusagasug%C3%A1%2C%20Cundinamarca&z=16&output=embed",
+  mapsUrl: "",
+  mapaEmbed: "",
   zona: "America/Bogota",
   horasAntesDeCerrar: 1,
   bloqueMinutos: 60,
@@ -23,7 +23,7 @@ export const negocio = {
     { etiqueta: "Dom", dias: [0], abre: "11:00", cierra: "19:00" }
   ],
   redes: {
-    instagram: "https://www.instagram.com/miami__cuts/",
+    instagram: "",
     resenas: ""
   },
   precios: {
@@ -43,14 +43,51 @@ export const negocio = {
     "Para las estadísticas del sitio guardamos un identificador anónimo en tu navegador. No es tu nombre ni tu celular. Sirve para contar visitas y reservas sin identificarte.",
     "Si quieres que borremos tu reserva o tus datos, escríbenos por WhatsApp y dinos el nombre y el celular con los que reservaste."
   ],
-  mensajeReserva: "Hola, quiero reservar una cita en Miami Cuts."
+  mensajeReserva: "Hola, quiero reservar una cita en Rich Barbery."
 };
+
+export function consultaMapa() {
+  const d = negocio.direccion;
+  return [negocio.nombre, d.calle, d.ciudad, d.departamento].filter(Boolean).join(", ");
+}
 
 export function enlaceMapa() {
   const guardado = String(negocio.mapsUrl || "").trim();
   if (guardado) return guardado;
-  const query = [negocio.nombre, direccionLinea()].filter(Boolean).join(", ");
-  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(consultaMapa());
+}
+
+export function enlaceEmbed() {
+  const guardado = String(negocio.mapaEmbed || "").trim();
+  if (guardado) return guardado;
+  return "https://maps.google.com/maps?q=" + encodeURIComponent(consultaMapa()) + "&z=16&output=embed";
+}
+
+export function usuarioInstagram() {
+  const href = String(negocio.redes.instagram || "").trim();
+  if (!href) return "";
+  const handle = href.replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop() || "";
+  const usuario = handle.replace(/^@/, "");
+  if (!usuario || usuario.includes(".")) return "";
+  return usuario;
+}
+
+export function textoCinta() {
+  const d = negocio.direccion;
+  const partes = [negocio.nombre, d.calle, d.ciudad]
+    .map((parte) => String(parte || "").trim())
+    .filter(Boolean)
+    .map((parte) => parte.toLocaleUpperCase("es-CO"));
+  const usuario = usuarioInstagram();
+  if (usuario) partes.push("SÍGUENOS @" + usuario.toLocaleUpperCase("es-CO"));
+  return partes.join(" · ");
+}
+
+export function codigoPais(pais) {
+  const value = String(pais == null ? negocio.direccion.pais : pais).trim();
+  if (/^colombia$/i.test(value)) return "CO";
+  if (/^[a-z]{2}$/i.test(value)) return value.toUpperCase();
+  return value;
 }
 
 export function formatoPrecio(valor) {
@@ -69,7 +106,7 @@ export function rangoPrecio() {
 
 export function direccionLinea() {
   const d = negocio.direccion;
-  return [d.calle, d.barrio, d.ciudad, d.region].filter(Boolean).join(", ");
+  return [d.calle, d.barrio, d.ciudad, d.departamento].filter(Boolean).join(", ");
 }
 
 export function enlaceWhatsapp(texto) {

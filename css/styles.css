@@ -13,6 +13,7 @@
   --line: rgba(26, 21, 18, 0.1);
   --gold-line: rgba(201, 162, 75, 0.55);
   --header: 76px;
+  --cinta: 0px;
   --serif: "Cormorant Garamond", "Iowan Old Style", Palatino, "Palatino Linotype", serif;
   --sans: Outfit, "Avenir Next", "Segoe UI", sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -143,6 +144,43 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .skip-link:focus { top: 1rem; }
 
+body:has(.cinta:not([hidden])) { --cinta: 2.15rem; }
+
+.cinta {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--cinta);
+  margin: 0;
+  padding: 0 0.9rem;
+  background: var(--espresso);
+  color: var(--gold);
+  font-size: clamp(0.58rem, 2.4vw, 0.72rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cinta[hidden] { display: none; }
+
+@media (max-width: 720px) {
+  body:has(.cinta:not([hidden])) { --cinta: 3.45rem; }
+
+  .cinta {
+    white-space: normal;
+    padding: 0.35rem 0.85rem;
+  }
+}
+
 .wrap {
   width: min(1120px, calc(100% - 2.5rem));
   margin-inline: auto;
@@ -172,7 +210,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ---------- Header ---------- */
 .site-header {
   position: fixed;
-  inset: 0 0 auto 0;
+  inset: var(--cinta) 0 auto 0;
   z-index: 50;
   height: var(--header);
   color: var(--cream);
@@ -498,7 +536,7 @@ button.nav-link {
 /* ---------- Sections ---------- */
 .section {
   padding: 5.5rem 0;
-  scroll-margin-top: calc(var(--header) + 18px);
+  scroll-margin-top: calc(var(--header) + var(--cinta) + 18px);
 }
 
 .section-head {
@@ -1229,7 +1267,7 @@ body.is-locked .fab {
 /* ---------- Breakpoints ---------- */
 .nav.is-open {
   position: fixed;
-  inset: var(--header) 0 0 0;
+  inset: calc(var(--header) + var(--cinta)) 0 0 0;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -1917,7 +1955,7 @@ body.is-locked .cita-card {
     radial-gradient(ellipse at 85% 0%, rgba(201, 162, 75, 0.18), transparent 46%),
     var(--espresso);
   color: var(--cream);
-  padding: calc(var(--header) + 4.2rem) 0 4.4rem;
+  padding: calc(var(--header) + var(--cinta) + 4.2rem) 0 4.4rem;
 }
 
 .historia-hero h1 {
@@ -2159,13 +2197,13 @@ body.is-locked .cita-card {
 #inicio,
 #contenido { scroll-margin-top: 0; }
 
-.historia-hero { scroll-margin-top: calc(var(--header) + 18px); }
+.historia-hero { scroll-margin-top: calc(var(--header) + var(--cinta) + 18px); }
 
 @media (max-width: 959px) {
   .nav {
     display: flex;
     position: fixed;
-    inset: var(--header) 0 0 0;
+    inset: calc(var(--header) + var(--cinta)) 0 0 0;
     z-index: 40;
     flex-direction: column;
     justify-content: space-between;
@@ -2476,7 +2514,7 @@ body:has(.cita-card:not([hidden])) .site-footer {
 
 .page-legal,
 .page-miss {
-  padding: calc(var(--header) + 3.2rem) 0 4rem;
+  padding: calc(var(--header) + var(--cinta) + 3.2rem) 0 4rem;
 }
 
 .page-miss {
@@ -2738,7 +2776,7 @@ html.is-client-offline .app-bar { display: none; }
   z-index: 70;
   left: 0.85rem;
   right: 0.85rem;
-  top: calc(var(--header) + 0.75rem + env(safe-area-inset-top));
+  top: calc(var(--header) + var(--cinta) + 0.75rem + env(safe-area-inset-top));
   margin: 0 auto;
   max-width: 36rem;
   padding: 1.15rem 1.2rem;
